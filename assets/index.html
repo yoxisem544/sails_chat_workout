@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html >
+<head>
+  <title>Sails Socket Demo - yoxisem544</title>
+  <!-- BootSwatch Paper Theme for Bootstrap -->
+  <link rel="stylesheet" type="text/css" href="/styles/bootstrap.min.css">
+  <!-- Open Sans Font -->
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300,600' rel='stylesheet' type='text/css'>
+</head>
+<body ng-app="socketApp" ng-controller="ChatController">
+  <!-- Sails Socket Dependancy -->
+  <script type="text/javascript" src="/js/dependencies/sails.io.js"></script>
+  <!-- Angular Js  -->
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.27/angular.min.js"></script>
+  <h1>Hello!!!</h1>
+  <div class="col-md-12">
+    <table class="table">
+      <tr class="chat_message" ng-repeat="chat in chatList | orderBy:predicate:reverse | limitTo: 15">
+        <td class="col-md-12 td_class"> {{chat.user}}<strong> : </strong>{{chat.message}} {{chat}}</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="navbar navbar-inverse navbar-fixed-bottom">
+    <div class="col-lg-12">
+      <form action="" class="form_chat">
+        <div class="col-lg-4 col-md3">
+          <!-- Username -->
+          <input type="text" ng-model="chatUser" class="form-control" placeholder="TypeYourNameHere">
+        </div>
+        <div class="col-lg-6 col-md5">
+          <!-- Chat Message -->
+          <input type="text" ng-model="chatMessage" class="form-control" placeholder="TypeYourMessageHere">
+        </div>
+        <button class="btn btn-default col-lg-2 col-md-2" ng-click="sendMsg()">Send</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+  var socketApp = angular.module('socketApp', []);
+  socketApp.controller('ChatController', ['$http', '$log', '$scope', function($http, $log, $scope) {
+    $scope.predicate = '-id';
+    $scope.reverse = false;
+    $scope.baseUrl = 'http://localhost:1337';
+    $scope.chatList = [];
+    // $http, $log, $scope injections
+    io.socket.get('/chat/addConv');
+    // now retrieve the chat history upto now.
+    $scope.getAllChat = function() {
+      io.socket.get('/chat/addConv');
+      $http.get($scope.baseUrl + '/chat')
+      .success(function(success_data) {
+        $scope.chatList = success_data;
+        $log.info(success_data);
+      });
+    };
+    $scope.getAllChat();
+    $scope.chatUser = "nikky!"
+    $scope.chatMessage = "";
+
+    io.socket.on('chat', function(obj) {
+    // check whether the verb is created or ng-controller
+    $log.info(obj);
+    if (obj.verb === 'created') {
+      $log.info(obj);
+      $scope.chatList.push(obj.data);
+      // add the data to current chatList
+      // call $scope.$digest to make the chages in UI
+      $scope.$digest();
+    }
+  });
+  $scope.sendMsg = function() {
+    $log.info($scope.chatMessage);
+    io.socket.post('/chat/addConv', {user: $scope.chatUser, message: $scope.chatMessage});
+    $scope.chatMessage = "";
+  };
+
+  }]);
+  
+  </script>
+</body>
+</html>
